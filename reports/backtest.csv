@@ -1,0 +1,7 @@
+model,games,accuracy,log_loss,brier,auc
+Always home,3816,0.5563,0.6868,0.2468,0.5
+Elo only,3816,0.642,0.6332,0.2215,0.6897
+Gradient boosting,3816,0.6473,0.6288,0.2195,0.6939
+Logistic (full),3816,0.6491,0.6252,0.218,0.6997
+Vegas moneyline,3815,0.6647,0.6092,0.2109,0.7202
+Logistic (Vegas games only),3815,0.649,0.6253,0.2181,0.6996

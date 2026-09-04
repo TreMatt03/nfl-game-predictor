@@ -1,0 +1,423 @@
+{
+  "season": 2026,
+  "week": 1,
+  "generated_utc": "2026-09-04T17:44:29.742630+00:00",
+  "games": [
+    {
+      "game_id": "2026_01_CLE_JAX",
+      "away_team": "CLE",
+      "home_team": "JAX",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.8383,
+      "away_win_prob": 0.1617,
+      "favorite": "JAX",
+      "drivers": [
+        {
+          "factor": "Quarterback play",
+          "effect": 0.4607670191020845,
+          "favors": "home"
+        },
+        {
+          "factor": "Elo rating gap",
+          "effect": 0.40327527398740726,
+          "favors": "home"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": 0.278487185996841,
+          "favors": "home"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_NO_DET",
+      "away_team": "NO",
+      "home_team": "DET",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.7465,
+      "away_win_prob": 0.2535,
+      "favorite": "DET",
+      "drivers": [
+        {
+          "factor": "Elo rating gap",
+          "effect": 0.35024715638314563,
+          "favors": "home"
+        },
+        {
+          "factor": "Quarterback play",
+          "effect": 0.2614665191609399,
+          "favors": "home"
+        },
+        {
+          "factor": "Explosive plays (overall)",
+          "effect": 0.0793045346643798,
+          "favors": "home"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_ARI_LAC",
+      "away_team": "ARI",
+      "home_team": "LAC",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.7295,
+      "away_win_prob": 0.2705,
+      "favorite": "LAC",
+      "drivers": [
+        {
+          "factor": "Elo rating gap",
+          "effect": 0.37791704978828644,
+          "favors": "home"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": 0.16056594975677638,
+          "favors": "home"
+        },
+        {
+          "factor": "Quarterback play",
+          "effect": 0.09320011222639688,
+          "favors": "home"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_WAS_PHI",
+      "away_team": "WAS",
+      "home_team": "PHI",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.6793,
+      "away_win_prob": 0.3207,
+      "favorite": "PHI",
+      "drivers": [
+        {
+          "factor": "Elo rating gap",
+          "effect": 0.27522646940048884,
+          "favors": "home"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": 0.1354619878723134,
+          "favors": "home"
+        },
+        {
+          "factor": "Divisional matchup",
+          "effect": -0.060443909314884775,
+          "favors": "away"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_NE_SEA",
+      "away_team": "NE",
+      "home_team": "SEA",
+      "kickoff": "2026-09-09",
+      "home_win_prob": 0.6207,
+      "away_win_prob": 0.3793,
+      "favorite": "SEA",
+      "drivers": [
+        {
+          "factor": "Elo rating gap",
+          "effect": 0.21667139071485314,
+          "favors": "home"
+        },
+        {
+          "factor": "Explosive plays (overall)",
+          "effect": -0.112769360423179,
+          "favors": "away"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": 0.05481150480526929,
+          "favors": "home"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_NYJ_TEN",
+      "away_team": "NYJ",
+      "home_team": "TEN",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.6177,
+      "away_win_prob": 0.3823,
+      "favorite": "TEN",
+      "drivers": [
+        {
+          "factor": "Quarterback play",
+          "effect": 0.09969091813276389,
+          "favors": "home"
+        },
+        {
+          "factor": "Explosive plays (overall)",
+          "effect": 0.06754686299480436,
+          "favors": "home"
+        },
+        {
+          "factor": "Divisional matchup",
+          "effect": 0.03364033119932247,
+          "favors": "home"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_SF_LA",
+      "away_team": "SF",
+      "home_team": "LA",
+      "kickoff": "2026-09-10",
+      "home_win_prob": 0.601,
+      "away_win_prob": 0.399,
+      "favorite": "LA",
+      "drivers": [
+        {
+          "factor": "Neutral site",
+          "effect": -0.38155848931607117,
+          "favors": "away"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": 0.24271685637690935,
+          "favors": "home"
+        },
+        {
+          "factor": "Elo rating gap",
+          "effect": 0.1401090131956662,
+          "favors": "home"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_TB_CIN",
+      "away_team": "TB",
+      "home_team": "CIN",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.5968,
+      "away_win_prob": 0.4032,
+      "favorite": "CIN",
+      "drivers": [
+        {
+          "factor": "Quarterback play",
+          "effect": 0.11641773800476647,
+          "favors": "home"
+        },
+        {
+          "factor": "Explosive plays (overall)",
+          "effect": -0.09289070275821716,
+          "favors": "away"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": 0.06149398051050411,
+          "favors": "home"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_MIA_LV",
+      "away_team": "MIA",
+      "home_team": "LV",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.4066,
+      "away_win_prob": 0.5934,
+      "favorite": "MIA",
+      "drivers": [
+        {
+          "factor": "Elo rating gap",
+          "effect": -0.32226353374120337,
+          "favors": "away"
+        },
+        {
+          "factor": "Quarterback play",
+          "effect": -0.28647338232279324,
+          "favors": "away"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": -0.05711007167652567,
+          "favors": "away"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_ATL_PIT",
+      "away_team": "ATL",
+      "home_team": "PIT",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.5872,
+      "away_win_prob": 0.4128,
+      "favorite": "PIT",
+      "drivers": [
+        {
+          "factor": "Elo rating gap",
+          "effect": 0.11576426240734766,
+          "favors": "home"
+        },
+        {
+          "factor": "Quarterback play",
+          "effect": -0.06451064167216763,
+          "favors": "away"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": -0.03656380295902212,
+          "favors": "away"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_BAL_IND",
+      "away_team": "BAL",
+      "home_team": "IND",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.4135,
+      "away_win_prob": 0.5865,
+      "favorite": "BAL",
+      "drivers": [
+        {
+          "factor": "Elo rating gap",
+          "effect": -0.24124654581237845,
+          "favors": "away"
+        },
+        {
+          "factor": "Quarterback play",
+          "effect": -0.19526313715236412,
+          "favors": "away"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": -0.13342696761390704,
+          "favors": "away"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_CHI_CAR",
+      "away_team": "CHI",
+      "home_team": "CAR",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.4148,
+      "away_win_prob": 0.5852,
+      "favorite": "CHI",
+      "drivers": [
+        {
+          "factor": "Elo rating gap",
+          "effect": -0.2945264127075625,
+          "favors": "away"
+        },
+        {
+          "factor": "Quarterback play",
+          "effect": -0.21633203377017043,
+          "favors": "away"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": -0.12301813823104485,
+          "favors": "away"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_GB_MIN",
+      "away_team": "GB",
+      "home_team": "MIN",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.4222,
+      "away_win_prob": 0.5778,
+      "favorite": "GB",
+      "drivers": [
+        {
+          "factor": "Quarterback play",
+          "effect": -0.5616636768557185,
+          "favors": "away"
+        },
+        {
+          "factor": "Divisional matchup",
+          "effect": -0.060443909314884775,
+          "favors": "away"
+        },
+        {
+          "factor": "Elo rating gap",
+          "effect": 0.05782196193129631,
+          "favors": "home"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_DEN_KC",
+      "away_team": "DEN",
+      "home_team": "KC",
+      "kickoff": "2026-09-14",
+      "home_win_prob": 0.4224,
+      "away_win_prob": 0.5776,
+      "favorite": "DEN",
+      "drivers": [
+        {
+          "factor": "Elo rating gap",
+          "effect": -0.3256019479767885,
+          "favors": "away"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": -0.1789068748741171,
+          "favors": "away"
+        },
+        {
+          "factor": "Divisional matchup",
+          "effect": -0.060443909314884775,
+          "favors": "away"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_DAL_NYG",
+      "away_team": "DAL",
+      "home_team": "NYG",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.4352,
+      "away_win_prob": 0.5648,
+      "favorite": "DAL",
+      "drivers": [
+        {
+          "factor": "Quarterback play",
+          "effect": -0.3078575543532698,
+          "favors": "away"
+        },
+        {
+          "factor": "Elo rating gap",
+          "effect": -0.10450879752332047,
+          "favors": "away"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": -0.07630952121946219,
+          "favors": "away"
+        }
+      ]
+    },
+    {
+      "game_id": "2026_01_BUF_HOU",
+      "away_team": "BUF",
+      "home_team": "HOU",
+      "kickoff": "2026-09-13",
+      "home_win_prob": 0.4843,
+      "away_win_prob": 0.5157,
+      "favorite": "BUF",
+      "drivers": [
+        {
+          "factor": "Quarterback play",
+          "effect": -0.22018600606006797,
+          "favors": "away"
+        },
+        {
+          "factor": "Explosive plays (overall)",
+          "effect": -0.09610599930535316,
+          "favors": "away"
+        },
+        {
+          "factor": "Success rate (overall)",
+          "effect": -0.05257875696462792,
+          "favors": "away"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NFL Week 1 Predictions</title>
+<style>
+:root {
+  --bg: #fbfaf9; --card: #ffffff; --ink: #1a1a18; --muted: #6b6b66;
+  --line: #e6e4e0; --accent: #2d6cdf; --away: #c2410c; --bar: #eeece8;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14140f; --card: #1c1c18; --ink: #f0eee9; --muted: #9a978f;
+    --line: #2e2e28; --accent: #6ea8ff; --away: #fb923c; --bar: #26261f;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.55 ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+.wrap { max-width: 860px; margin: 0 auto; padding: 40px 20px 72px; }
+header { border-bottom: 1px solid var(--line); padding-bottom: 24px; margin-bottom: 8px; }
+h1 { font-size: 1.9rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+.sub { color: var(--muted); font-size: 0.95rem; }
+.metrics { display: flex; flex-wrap: wrap; gap: 26px; margin: 22px 0 0; }
+.metric .v { font-size: 1.35rem; font-weight: 640; font-variant-numeric: tabular-nums; }
+.metric .k { color: var(--muted); font-size: 0.78rem; text-transform: uppercase;
+  letter-spacing: 0.06em; }
+.game { border: 1px solid var(--line); background: var(--card); border-radius: 10px;
+  padding: 18px 20px; margin-top: 14px; }
+.matchup { display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px; }
+.teams { font-size: 1.12rem; font-weight: 620; }
+.kick { color: var(--muted); font-size: 0.83rem; white-space: nowrap; }
+.bar { height: 9px; background: var(--bar); border-radius: 5px; overflow: hidden;
+  margin: 13px 0 9px; display: flex; }
+.bar .h { background: var(--accent); }
+.bar .a { background: var(--away); }
+.odds { display: flex; justify-content: space-between; font-size: 0.87rem;
+  font-variant-numeric: tabular-nums; }
+.odds .home { color: var(--accent); font-weight: 600; }
+.odds .away { color: var(--away); font-weight: 600; }
+.why { margin-top: 13px; padding-top: 12px; border-top: 1px dashed var(--line);
+  font-size: 0.85rem; color: var(--muted); }
+.why span { display: inline-block; margin-right: 14px; }
+.why b { color: var(--ink); font-weight: 600; }
+.qb { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
+h2 { font-size: 1.15rem; margin: 44px 0 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem;
+  font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+th { color: var(--muted); font-weight: 600; font-size: 0.78rem;
+  text-transform: uppercase; letter-spacing: 0.05em; }
+tr.mine td { font-weight: 680; }
+.scroll { overflow-x: auto; }
+footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line);
+  color: var(--muted); font-size: 0.82rem; }
+a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>NFL 2026 &middot; Week 1</h1>
+  <div class="sub">Win probabilities from team efficiency, Elo, and quarterback
+    form. Trained only on games played before each prediction.</div>
+  <div class="metrics"><div class="metric"><div class="v">64.9%</div><div class="k">Accuracy</div></div><div class="metric"><div class="v">0.625</div><div class="k">Log loss</div></div><div class="metric"><div class="v">0.218</div><div class="k">Brier</div></div><div class="metric"><div class="v">0.609</div><div class="k">Vegas log loss</div></div><div class="metric"><div class="v">16</div><div class="k">Games</div></div></div>
+</header>
+
+<div class="game">
+  <div class="matchup">
+    <div class="teams">CLE <span style="color:var(--muted)">at</span> JAX</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: S.Sanders &middot; T.Lawrence</div>
+  <div class="bar">
+    <div class="a" style="width:16.2%"></div>
+    <div class="h" style="width:83.8%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">CLE 16%</span>
+    <span class="home">84% JAX</span>
+  </div>
+  <div class="why"><span><b>Quarterback play</b> &rarr; JAX</span><span><b>Elo rating gap</b> &rarr; JAX</span><span><b>Success rate (overall)</b> &rarr; JAX</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">NO <span style="color:var(--muted)">at</span> DET</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: T.Shough &middot; J.Goff</div>
+  <div class="bar">
+    <div class="a" style="width:25.4%"></div>
+    <div class="h" style="width:74.6%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">NO 25%</span>
+    <span class="home">75% DET</span>
+  </div>
+  <div class="why"><span><b>Elo rating gap</b> &rarr; DET</span><span><b>Quarterback play</b> &rarr; DET</span><span><b>Explosive plays (overall)</b> &rarr; DET</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">ARI <span style="color:var(--muted)">at</span> LAC</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: J.Brissett &middot; J.Herbert</div>
+  <div class="bar">
+    <div class="a" style="width:27.0%"></div>
+    <div class="h" style="width:73.0%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">ARI 27%</span>
+    <span class="home">73% LAC</span>
+  </div>
+  <div class="why"><span><b>Elo rating gap</b> &rarr; LAC</span><span><b>Success rate (overall)</b> &rarr; LAC</span><span><b>Quarterback play</b> &rarr; LAC</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">WAS <span style="color:var(--muted)">at</span> PHI</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: M.Mariota &middot; J.Hurts</div>
+  <div class="bar">
+    <div class="a" style="width:32.1%"></div>
+    <div class="h" style="width:67.9%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">WAS 32%</span>
+    <span class="home">68% PHI</span>
+  </div>
+  <div class="why"><span><b>Elo rating gap</b> &rarr; PHI</span><span><b>Success rate (overall)</b> &rarr; PHI</span><span><b>Divisional matchup</b> &rarr; WAS</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">NE <span style="color:var(--muted)">at</span> SEA</div>
+    <div class="kick">Wed 09 Sep</div>
+  </div>
+  <div class="qb">QB: D.Maye &middot; S.Darnold</div>
+  <div class="bar">
+    <div class="a" style="width:37.9%"></div>
+    <div class="h" style="width:62.1%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">NE 38%</span>
+    <span class="home">62% SEA</span>
+  </div>
+  <div class="why"><span><b>Elo rating gap</b> &rarr; SEA</span><span><b>Explosive plays (overall)</b> &rarr; NE</span><span><b>Success rate (overall)</b> &rarr; SEA</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">NYJ <span style="color:var(--muted)">at</span> TEN</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: B.Cook &middot; C.Ward</div>
+  <div class="bar">
+    <div class="a" style="width:38.2%"></div>
+    <div class="h" style="width:61.8%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">NYJ 38%</span>
+    <span class="home">62% TEN</span>
+  </div>
+  <div class="why"><span><b>Quarterback play</b> &rarr; TEN</span><span><b>Explosive plays (overall)</b> &rarr; TEN</span><span><b>Divisional matchup</b> &rarr; TEN</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">SF <span style="color:var(--muted)">at</span> LA</div>
+    <div class="kick">Thu 10 Sep</div>
+  </div>
+  <div class="qb">QB: B.Purdy &middot; M.Stafford</div>
+  <div class="bar">
+    <div class="a" style="width:39.9%"></div>
+    <div class="h" style="width:60.1%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">SF 40%</span>
+    <span class="home">60% LA</span>
+  </div>
+  <div class="why"><span><b>Neutral site</b> &rarr; SF</span><span><b>Success rate (overall)</b> &rarr; LA</span><span><b>Elo rating gap</b> &rarr; LA</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">TB <span style="color:var(--muted)">at</span> CIN</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: B.Mayfield &middot; J.Burrow</div>
+  <div class="bar">
+    <div class="a" style="width:40.3%"></div>
+    <div class="h" style="width:59.7%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">TB 40%</span>
+    <span class="home">60% CIN</span>
+  </div>
+  <div class="why"><span><b>Quarterback play</b> &rarr; CIN</span><span><b>Explosive plays (overall)</b> &rarr; TB</span><span><b>Success rate (overall)</b> &rarr; CIN</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">MIA <span style="color:var(--muted)">at</span> LV</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: T.Tagovailoa &middot; G.Smith</div>
+  <div class="bar">
+    <div class="a" style="width:59.3%"></div>
+    <div class="h" style="width:40.7%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">MIA 59%</span>
+    <span class="home">41% LV</span>
+  </div>
+  <div class="why"><span><b>Elo rating gap</b> &rarr; MIA</span><span><b>Quarterback play</b> &rarr; MIA</span><span><b>Success rate (overall)</b> &rarr; MIA</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">ATL <span style="color:var(--muted)">at</span> PIT</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: K.Cousins &middot; A.Rodgers</div>
+  <div class="bar">
+    <div class="a" style="width:41.3%"></div>
+    <div class="h" style="width:58.7%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">ATL 41%</span>
+    <span class="home">59% PIT</span>
+  </div>
+  <div class="why"><span><b>Elo rating gap</b> &rarr; PIT</span><span><b>Quarterback play</b> &rarr; ATL</span><span><b>Success rate (overall)</b> &rarr; ATL</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">BAL <span style="color:var(--muted)">at</span> IND</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: L.Jackson &middot; D.Jones</div>
+  <div class="bar">
+    <div class="a" style="width:58.7%"></div>
+    <div class="h" style="width:41.3%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">BAL 59%</span>
+    <span class="home">41% IND</span>
+  </div>
+  <div class="why"><span><b>Elo rating gap</b> &rarr; BAL</span><span><b>Quarterback play</b> &rarr; BAL</span><span><b>Success rate (overall)</b> &rarr; BAL</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">CHI <span style="color:var(--muted)">at</span> CAR</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: C.Williams &middot; B.Young</div>
+  <div class="bar">
+    <div class="a" style="width:58.5%"></div>
+    <div class="h" style="width:41.5%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">CHI 59%</span>
+    <span class="home">41% CAR</span>
+  </div>
+  <div class="why"><span><b>Elo rating gap</b> &rarr; CHI</span><span><b>Quarterback play</b> &rarr; CHI</span><span><b>Success rate (overall)</b> &rarr; CHI</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">GB <span style="color:var(--muted)">at</span> MIN</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: J.Love &middot; J.McCarthy</div>
+  <div class="bar">
+    <div class="a" style="width:57.8%"></div>
+    <div class="h" style="width:42.2%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">GB 58%</span>
+    <span class="home">42% MIN</span>
+  </div>
+  <div class="why"><span><b>Quarterback play</b> &rarr; GB</span><span><b>Divisional matchup</b> &rarr; GB</span><span><b>Elo rating gap</b> &rarr; MIN</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">DEN <span style="color:var(--muted)">at</span> KC</div>
+    <div class="kick">Mon 14 Sep</div>
+  </div>
+  <div class="qb">QB: B.Nix &middot; P.Mahomes</div>
+  <div class="bar">
+    <div class="a" style="width:57.8%"></div>
+    <div class="h" style="width:42.2%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">DEN 58%</span>
+    <span class="home">42% KC</span>
+  </div>
+  <div class="why"><span><b>Elo rating gap</b> &rarr; DEN</span><span><b>Success rate (overall)</b> &rarr; DEN</span><span><b>Divisional matchup</b> &rarr; DEN</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">DAL <span style="color:var(--muted)">at</span> NYG</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: D.Prescott &middot; J.Dart</div>
+  <div class="bar">
+    <div class="a" style="width:56.5%"></div>
+    <div class="h" style="width:43.5%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">DAL 56%</span>
+    <span class="home">44% NYG</span>
+  </div>
+  <div class="why"><span><b>Quarterback play</b> &rarr; DAL</span><span><b>Elo rating gap</b> &rarr; DAL</span><span><b>Success rate (overall)</b> &rarr; DAL</span></div>
+</div><div class="game">
+  <div class="matchup">
+    <div class="teams">BUF <span style="color:var(--muted)">at</span> HOU</div>
+    <div class="kick">Sun 13 Sep</div>
+  </div>
+  <div class="qb">QB: J.Allen &middot; C.Stroud</div>
+  <div class="bar">
+    <div class="a" style="width:51.6%"></div>
+    <div class="h" style="width:48.4%"></div>
+  </div>
+  <div class="odds">
+    <span class="away">BUF 52%</span>
+    <span class="home">48% HOU</span>
+  </div>
+  <div class="why"><span><b>Quarterback play</b> &rarr; BUF</span><span><b>Explosive plays (overall)</b> &rarr; BUF</span><span><b>Success rate (overall)</b> &rarr; BUF</span></div>
+</div>
+
+<h2>How the model was tested</h2>
+<div class="sub" style="margin-bottom:12px">Walk-forward: every season is
+predicted by a model trained only on earlier seasons. 3816 games.</div>
+<div class="scroll"><table><thead><tr><th>Model</th><th>Games</th><th>Accuracy</th><th>Log Loss</th><th>Brier</th><th>Auc</th></tr></thead><tbody><tr><td>Always home</td><td>3816</td><td>0.5563</td><td>0.6868</td><td>0.2468</td><td>0.5</td></tr><tr><td>Elo only</td><td>3816</td><td>0.642</td><td>0.6332</td><td>0.2215</td><td>0.6897</td></tr><tr><td>Gradient boosting</td><td>3816</td><td>0.6473</td><td>0.6288</td><td>0.2195</td><td>0.6939</td></tr><tr class="mine"><td>Logistic (full)</td><td>3816</td><td>0.6491</td><td>0.6252</td><td>0.218</td><td>0.6997</td></tr><tr><td>Vegas moneyline</td><td>3815</td><td>0.6647</td><td>0.6092</td><td>0.2109</td><td>0.7202</td></tr><tr><td>Logistic (Vegas games only)</td><td>3815</td><td>0.649</td><td>0.6253</td><td>0.2181</td><td>0.6996</td></tr></tbody></table></div>
+
+<footer>
+  Built from public <a href="https://github.com/nflverse">nflverse</a> data.
+  Updated 04 Sep 2026 17:44 UTC. Predictions are for interest, not for wagering.
+</footer>
+</div>
+</body>
+</html>

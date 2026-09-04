@@ -1,0 +1,56 @@
+name: weekly predictions
+
+on:
+  schedule:
+    # 11:00 UTC every Tuesday — after Monday Night Football has settled and
+    # nflverse has published the week's play-by-play.
+    - cron: "0 11 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two runs publish over each other.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # Only the last few seasons of play-by-play are downloaded, so this stays
+      # small. The cache key rolls weekly to pick up newly played games.
+      - uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: nflverse-${{ github.run_id }}
+          restore-keys: nflverse-
+
+      - name: Build predictions and page
+        run: python scripts/predict_week.py --refresh
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: predict
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

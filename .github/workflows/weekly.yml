@@ -8,7 +8,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # write, because the prediction log is committed back to the repo. It has to
+  # persist between runs: a track record that is regenerated each week from the
+  # current model is not a track record.
+  contents: write
   pages: write
   id-token: write
 
@@ -40,6 +43,16 @@ jobs:
 
       - name: Build predictions and page
         run: python scripts/predict_week.py --refresh
+
+      - name: Commit the prediction log
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add predictions_log.csv
+          # Nothing to commit when the slate was already logged, which is the
+          # normal case for a rerun within the same week.
+          git diff --staged --quiet || git commit -m "Log predictions [skip ci]"
+          git push
 
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -56,6 +56,13 @@ th { color: var(--muted); font-weight: 600; font-size: 0.78rem;
   text-transform: uppercase; letter-spacing: 0.05em; }
 tr.mine td { font-weight: 680; }
 .scroll { overflow-x: auto; }
+.hit { color: #15803d; font-weight: 650; }
+.miss { color: #b91c1c; font-weight: 650; }
+@media (prefers-color-scheme: dark) {
+  .hit { color: #4ade80; }
+  .miss { color: #f87171; }
+}
+.note { color: var(--muted); font-size: 0.85rem; margin: 6px 0 14px; }
 footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line);
   color: var(--muted); font-size: 0.82rem; }
 a { color: var(--accent); }
@@ -312,6 +319,9 @@ a { color: var(--accent); }
   <div class="why"><span><b>Quarterback play</b> &rarr; GB</span><span><b>Divisional matchup</b> &rarr; GB</span><span><b>Elo rating gap</b> &rarr; MIN</span></div>
 </div>
 
+<h2>Track record</h2>
+<div class="note">No predictions have been settled yet. Every forecast is logged when published and scored here once the game is played.</div>
+
 <h2>How the model was tested</h2>
 <div class="sub" style="margin-bottom:12px">Walk-forward: every season is
 predicted by a model trained only on earlier seasons. 3816 games.</div>
@@ -319,7 +329,7 @@ predicted by a model trained only on earlier seasons. 3816 games.</div>
 
 <footer>
   Built from public <a href="https://github.com/nflverse">nflverse</a> data.
-  Updated 04 Sep 2026 18:05 UTC. Predictions are for interest, not for wagering.
+  Updated 04 Sep 2026 18:34 UTC. Predictions are for interest, not for wagering.
 </footer>
 </div>
 </body>

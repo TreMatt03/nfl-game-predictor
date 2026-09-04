@@ -112,6 +112,59 @@ trimmed set costs 0.0006 log loss and every sign is now interpretable:
 Neutral site and divisional games both reduce the home edge, which is what the
 football tells you should happen.
 
+## Track record
+
+Every prediction is written to `predictions_log.csv` when it is published and
+never rewritten, then scored against the result once the game is played. The
+live record appears at the top of the page.
+
+The "never rewritten" part is the whole point. If a rerun could revise an
+earlier call with a better-informed one, the record would quietly become
+fiction — and would look like an improving model rather than a bug.
+`test_a_rerun_cannot_revise_an_earlier_call` enforces it.
+
+The log is committed back to the repo by the scheduled job, because a track
+record regenerated each week by the current model is not a track record.
+
+As a check that the scoring path agrees with the evaluation path, replaying
+2025 as genuine out-of-sample predictions (trained through 2024 only) gives
+181–103, 63.7%, 0.634 log loss — matching that season's walk-forward row.
+
+## What does not help
+
+Things that sound like they should matter, tested and rejected. Each was judged
+on whether it improved walk-forward log loss *on top of* the existing features,
+not on whether it correlates with winning:
+
+| Added | Log loss | Change |
+|---|---|---|
+| nothing (current model) | **0.6252** | — |
+| First-season head coach | 0.6253 | +0.0001 |
+| Head coach tenure | 0.6254 | +0.0002 |
+| New head coach | 0.6254 | +0.0002 |
+| All coaching features | 0.6257 | +0.0005 |
+| Weather (wind, cold, dome) | 0.6258 | +0.0006 |
+| Coaching + weather | 0.6264 | +0.0012 |
+
+Every one made the model worse. The coaching result is the interesting one,
+because the raw effect looks convincing:
+
+```
+first-season coach   48.1% win rate,  mean Elo 1433
+established coach    58.1% win rate,  mean Elo 1528
+```
+
+Teams under a new coach really do lose more. But they were already bad — that is
+why the coach is new — and Elo has known it since last season. Once team
+strength is controlled for, the coaching flag carries no information and only
+adds variance. This is the same confound that makes "team X is 2-8 in their last
+10" sound meaningful.
+
+Weather behaves as expected: it hits both sides equally, so it moves total
+points rather than who wins.
+
+Reproduce with `python scripts/experiment_context.py`.
+
 ## Keeping starters current
 
 Play-by-play can only show who started *last* season. An offseason trade or
@@ -165,6 +218,7 @@ python scripts/backtest.py     # walk-forward evaluation → reports/
 python scripts/predict_week.py # next week's slate → site/
 python scripts/starters.py     # who each team is assumed to start
 python scripts/experiment.py   # feature set and regularisation sweep
+python scripts/experiment_context.py  # test coaching / weather features
 pytest tests/ -q
 ```
 
@@ -193,10 +247,11 @@ src/nflpred/
   model.py        classifiers and walk-forward evaluation
   explain.py      exact per-game log-odds decomposition
   predict.py      forecasting unplayed games
+  tracking.py     prediction log and live scoring
   site.py         static page generator
 config/           confirmed starting quarterbacks, maintained by hand
 scripts/          train, backtest, experiment, predict_week, starters
-tests/            29 tests, no network required
+tests/            39 tests, no network required
 ```
 
 `.github/workflows/weekly.yml` reruns the forecast every Tuesday and deploys to

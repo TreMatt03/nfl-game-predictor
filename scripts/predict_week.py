@@ -19,7 +19,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from nflpred import data, pipeline, site
+from nflpred import data, pipeline, site, tracking
 from nflpred.model import fit_final
 from nflpred.predict import predict_slate
 
@@ -70,7 +70,11 @@ def main() -> None:
     if not backtest_path.exists():
         raise SystemExit("run scripts/backtest.py first to produce reports/backtest.csv")
 
-    out = site.render(slate, pd.read_csv(backtest_path))
+    # Log first, so this week's slate is on the record before it is published.
+    tracking.log_predictions(slate)
+
+    scored = tracking.score_history(tracking.load_log(), schedules)
+    out = site.render(slate, pd.read_csv(backtest_path), scored=scored)
 
     print(f"\n{slate.season} Week {slate.week} -- {len(slate.games)} games\n")
     for _, row in slate.games.iterrows():

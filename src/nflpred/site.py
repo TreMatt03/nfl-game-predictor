@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from . import tracking
 from .predict import Slate
 
 SITE_DIR = Path(__file__).resolve().parents[2] / "site"
@@ -76,6 +77,13 @@ th {{ color: var(--muted); font-weight: 600; font-size: 0.78rem;
   text-transform: uppercase; letter-spacing: 0.05em; }}
 tr.mine td {{ font-weight: 680; }}
 .scroll {{ overflow-x: auto; }}
+.hit {{ color: #15803d; font-weight: 650; }}
+.miss {{ color: #b91c1c; font-weight: 650; }}
+@media (prefers-color-scheme: dark) {{
+  .hit {{ color: #4ade80; }}
+  .miss {{ color: #f87171; }}
+}}
+.note {{ color: var(--muted); font-size: 0.85rem; margin: 6px 0 14px; }}
 footer {{ margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line);
   color: var(--muted); font-size: 0.82rem; }}
 a {{ color: var(--accent); }}
@@ -91,6 +99,8 @@ a {{ color: var(--accent); }}
 </header>
 
 {games}
+
+{track_record}
 
 <h2>How the model was tested</h2>
 <div class="sub" style="margin-bottom:12px">Walk-forward: every season is
@@ -149,6 +159,58 @@ def _game_card(row: pd.Series) -> str:
 </div>"""
 
 
+def _track_record(scored: pd.DataFrame) -> str:
+    """Live results section, or a placeholder before anything has settled."""
+    summary = tracking.summarise(scored)
+
+    if not summary["games"]:
+        return (
+            '<h2>Track record</h2>\n<div class="note">No predictions have been '
+            "settled yet. Every forecast is logged when published and scored "
+            "here once the game is played.</div>"
+        )
+
+    tiles = "".join(
+        [
+            _metric_block("Record", f"{summary['wins']}&ndash;{summary['losses']}"),
+            _metric_block("Accuracy", f"{summary['accuracy'] * 100:.1f}%"),
+            _metric_block("Log loss", f"{summary['log_loss']:.3f}"),
+            _metric_block("Brier", f"{summary['brier']:.3f}"),
+        ]
+    )
+
+    recent = tracking.latest_week(scored)
+    rows = []
+    for _, r in recent.iterrows():
+        picked = r["favorite"]
+        hit = r["correct"] == 1
+        confidence = r["confidence"] * 100
+        rows.append(
+            f"<tr><td>{html.escape(r['away_team'])} at "
+            f"{html.escape(r['home_team'])}</td>"
+            f"<td>{html.escape(str(picked))} {confidence:.0f}%</td>"
+            f"<td>{html.escape(str(r['winner']))}</td>"
+            f'<td class="{"hit" if hit else "miss"}">'
+            f'{"correct" if hit else "wrong"}</td></tr>'
+        )
+
+    week_label = ""
+    if not recent.empty:
+        week_label = (
+            f"Week {int(recent.iloc[0]['week'])}, "
+            f"{int(recent.iloc[0]['season'])}"
+        )
+
+    return f"""<h2>Track record</h2>
+<div class="note">Live results. Each prediction is logged when it is published
+and never revised, so this is what was actually called beforehand.</div>
+<div class="metrics" style="margin-bottom:18px">{tiles}</div>
+<h2 style="margin-top:28px;font-size:1rem">{week_label}</h2>
+<div class="scroll"><table><thead><tr>
+<th>Game</th><th>Pick</th><th>Winner</th><th>Result</th>
+</tr></thead><tbody>{"".join(rows)}</tbody></table></div>"""
+
+
 def _backtest_table(backtest: pd.DataFrame) -> str:
     header = "".join(
         f"<th>{html.escape(c.replace('_', ' ').title())}</th>" for c in backtest.columns
@@ -161,7 +223,12 @@ def _backtest_table(backtest: pd.DataFrame) -> str:
     return f"<table><thead><tr>{header}</tr></thead><tbody>{''.join(rows)}</tbody></table>"
 
 
-def render(slate: Slate, backtest: pd.DataFrame, out_dir: Path = SITE_DIR) -> Path:
+def render(
+    slate: Slate,
+    backtest: pd.DataFrame,
+    out_dir: Path = SITE_DIR,
+    scored: pd.DataFrame | None = None,
+) -> Path:
     """Write index.html and predictions.json into ``out_dir``."""
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -185,6 +252,9 @@ def render(slate: Slate, backtest: pd.DataFrame, out_dir: Path = SITE_DIR) -> Pa
         metrics="".join(metrics),
         games="".join(_game_card(r) for _, r in slate.games.iterrows()),
         table=_backtest_table(backtest),
+        track_record=_track_record(
+            scored if scored is not None else pd.DataFrame()
+        ),
         backtest_games=int(mine["games"]),
         updated=datetime.now(timezone.utc).strftime("%d %b %Y %H:%M UTC"),
     )

@@ -9,10 +9,10 @@ Tuesday and publish to a live page.
 ```
 2026 Week 1
 
-  CLE at JAX   83.8% JAX    (Quarterback play)
-   NO at DET   74.6% DET    (Elo rating gap)
-  ARI at LAC   73.0% LAC    (Elo rating gap)
-  BUF at HOU   51.6% BUF    (Quarterback play)
+  CLE at JAX   81.1% JAX    (Elo rating gap)
+   NO at DET   75.0% DET    (Elo rating gap)
+  ARI at LAC   72.6% LAC    (Elo rating gap)
+   GB at MIN   50.2% MIN    (Quarterback play)
 ```
 
 ## Results
@@ -56,13 +56,16 @@ dropback, tracked per player so it follows a trade or a midseason takeover —
 moved log loss from 0.633 to 0.625 and AUC from 0.690 to 0.700. It is the single
 largest improvement in the project.
 
-**The naive "current starter" is wrong for a third of the league.** Taking each
-team's most recent start looked obviously correct and was badly broken: teams
-out of contention rest their starters in Week 18, so the last passer to take a
-snap is often a backup who will never start again. The first version projected
-Kansas City's 2026 season with their third-string quarterback. Picking the most
-frequent starter over a team's last 10 games fixes it, and
+**Identifying the current starter is harder than it looks.** Taking each team's
+most recent start seemed obviously correct and was badly broken: teams out of
+contention rest their starters in Week 18, so the last passer to take a snap is
+often a backup who will never start again. The first version projected Kansas
+City's 2026 season with their third-string quarterback. Picking the most
+frequent starter over a team's last 10 games fixes that, and
 `tests/test_quarterback.py` pins the behaviour so it cannot come back.
+
+Inference alone still cannot solve it, which is why `config/starters.json`
+exists — see below.
 
 ## How it avoids fooling itself
 
@@ -109,6 +112,39 @@ trimmed set costs 0.0006 log loss and every sign is now interpretable:
 Neutral site and divisional games both reduce the home edge, which is what the
 football tells you should happen.
 
+## Keeping starters current
+
+Play-by-play can only show who started *last* season. An offseason trade or
+signing is invisible until the player takes a snap for his new team, so in
+September the inferred starter is stale for any team that changed quarterback —
+which in 2026 was seven of them, including three straight swaps that inference
+read exactly backwards (Cousins to Las Vegas, Tagovailoa to Atlanta, Smith to
+the Jets).
+
+No data source fixes this, so it is handled explicitly rather than pretended
+away. `config/starters.json` records confirmed starters by season:
+
+```json
+"2026": {
+  "ATL": "T.Tagovailoa",
+  "LV":  "K.Cousins",
+  "MIN": "K.Murray"
+}
+```
+
+Only the *team assignment* is corrected. The rating still comes from that
+passer's own career, whichever team he earned it on. A name that matches no
+passer, or more than one, raises rather than quietly forecasting with the wrong
+man.
+
+```bash
+python scripts/starters.py   # print all 32, flagging confirmed vs inferred
+```
+
+Worth running before trusting an early-season slate. These corrections are not
+cosmetic — applying the 2026 set flipped Green Bay at Minnesota and moved
+Miami at Las Vegas by seven points of win probability.
+
 ## Data
 
 All public, no API keys, from [nflverse](https://github.com/nflverse):
@@ -127,13 +163,24 @@ pip install -r requirements.txt
 python scripts/train.py        # fit on full history, save models/model.joblib
 python scripts/backtest.py     # walk-forward evaluation → reports/
 python scripts/predict_week.py # next week's slate → site/
+python scripts/starters.py     # who each team is assumed to start
 python scripts/experiment.py   # feature set and regularisation sweep
 pytest tests/ -q
 ```
 
 First run downloads ~400 MB of play-by-play and caches it in `data/`. After
-that, `predict_week.py` pulls only the last three seasons — enough to refresh
-form — which is why the scheduled job finishes in about a minute.
+that, `predict_week.py` pulls only the last six seasons, which is why the
+scheduled job finishes in about a minute.
+
+Six rather than three because the window is set by quarterbacks, not teams.
+Team form forgets within a season and would be happy with three, but a backup
+may have a handful of starts spread over several years, and a short window
+keeps whichever of them happen to fall inside it. At three seasons one
+quarterback with 7 career starts came out rated the second-best passer in the
+league, because the window kept his good season and dropped his bad one. Six
+seasons reproduces full-history ratings for all 32 starters. Training also
+records career start counts to `models/qb_career.csv`, so a veteran returning
+from injury is not shrunk like a rookie just because the window is short.
 
 ## Layout
 
@@ -147,8 +194,9 @@ src/nflpred/
   explain.py      exact per-game log-odds decomposition
   predict.py      forecasting unplayed games
   site.py         static page generator
-scripts/          train, backtest, experiment, predict_week
-tests/            23 tests, no network required
+config/           confirmed starting quarterbacks, maintained by hand
+scripts/          train, backtest, experiment, predict_week, starters
+tests/            29 tests, no network required
 ```
 
 `.github/workflows/weekly.yml` reruns the forecast every Tuesday and deploys to
@@ -158,9 +206,10 @@ GitHub Pages.
 
 - **Injuries beyond quarterback are invisible.** A team missing its best pass
   rusher looks unchanged until results move Elo.
-- **The starting quarterback is assumed, not known.** For an unplayed game it is
-  whoever started most of the last 10, which misses an announcement made after
-  the page was built.
+- **The starting quarterback is assumed, not known.** It is whoever
+  `config/starters.json` names, falling back to whoever started most of the last
+  10 games. A midweek injury or a late announcement will not be reflected until
+  that file is updated.
 - **No weather, travel distance, or short-week specifics** beyond rest days.
 - **Week 1 is the weakest week**, leaning on regressed prior-season ratings with
   no current-season evidence at all.

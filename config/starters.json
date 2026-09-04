@@ -1,0 +1,27 @@
+{
+  "_comment": [
+    "Confirmed starting quarterbacks, overriding what the model infers from",
+    "play-by-play. Needed because starters are inferred from last season's",
+    "snaps, so no data source can see an offseason trade or signing until the",
+    "player takes a snap for the new team.",
+    "",
+    "Keys are nflverse team codes; values are nflverse passer names in",
+    "'F.Lastname' form. A name must match exactly one passer in the history or",
+    "the run fails loudly rather than quietly predicting with the wrong man.",
+    "",
+    "The player's rating always comes from their own career, whichever team",
+    "they earned it on. Only the team assignment is being corrected here.",
+    "",
+    "Delete a season's block once that season is underway and real snaps have",
+    "taken over."
+  ],
+  "2026": {
+    "ATL": "T.Tagovailoa",
+    "CLE": "D.Watson",
+    "LV": "K.Cousins",
+    "MIA": "M.Willis",
+    "MIN": "K.Murray",
+    "NYJ": "G.Smith",
+    "WAS": "J.Daniels"
+  }
+}

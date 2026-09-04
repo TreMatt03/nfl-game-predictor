@@ -66,7 +66,10 @@ def build_upcoming(
     ].copy()
 
     net = _net_now(team_games)
-    qbs = quarterback.current_starters(starters)
+
+    # The season matters here: it selects the confirmed-starter overrides that
+    # correct for offseason moves the play-by-play cannot yet show.
+    qbs = quarterback.current_starters(starters, season=season)
 
     # Ratings come back current as of the last completed game. If we are
     # forecasting a later season, take the off-season regression for each

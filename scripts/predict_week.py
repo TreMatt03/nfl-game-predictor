@@ -26,9 +26,14 @@ from nflpred.predict import predict_slate
 MODEL_PATH = ROOT / "models" / "model.joblib"
 REPORTS = ROOT / "reports"
 
-# Form uses an 8-game halflife for teams and 10 starts for quarterbacks, so
-# three seasons is comfortably more history than any rating still depends on.
-FORM_SEASONS = 3
+# Team form would be happy with three seasons -- an 8-game halflife forgets
+# faster than that. Quarterback ratings drive the window instead: a backup may
+# have only a handful of starts spread over several years, and a short window
+# keeps whichever of them happen to fall inside it. Cutting to three seasons
+# left one quarterback with 7 career starts rated the second best passer in the
+# league, because it kept his good season and dropped his bad one. Six seasons
+# reproduces full-history ratings for every active starter.
+FORM_SEASONS = 6
 
 
 def main() -> None:

@@ -144,3 +144,112 @@ def test_relief_appearances_are_not_counted_as_starts():
     stats = quarterback.qb_game_stats(pbp)
 
     assert list(stats["passer_player_id"]) == ["starter"]
+
+
+def _two_team_history():
+    """Two passers, each established with a different team."""
+    rows = []
+    for i, d in enumerate((6, 13, 20, 27, 4, 11, 18, 25)):
+        month = 9 if i < 4 else 10
+        rows.append(
+            {
+                "passer_player_id": "vet",
+                "team": "AAA",
+                "qb_name": "V.Et",
+                "gameday": f"2020-{month:02d}-{d:02d}",
+                "qb_epa": 0.25,
+            }
+        )
+        rows.append(
+            {
+                "passer_player_id": "other",
+                "team": "BBB",
+                "qb_name": "O.Ther",
+                "gameday": f"2020-{month:02d}-{d:02d}",
+                "qb_epa": -0.1,
+            }
+        )
+    return quarterback.add_qb_form(_starts(rows))
+
+
+def test_override_reassigns_a_passer_to_his_new_team(tmp_path):
+    """An offseason trade is invisible in play-by-play until he plays."""
+    config = tmp_path / "starters.json"
+    config.write_text('{"2026": {"BBB": "V.Et"}}', encoding="utf-8")
+
+    starters = _two_team_history()
+    ratings = quarterback.player_ratings(starters, career_starts=pd.Series(dtype=float))
+    chosen = quarterback.current_starters(starters)
+
+    assert chosen.loc["BBB", "qb_name"] == "O.Ther"
+
+    overrides = quarterback.load_overrides(2026, path=config)
+    updated = quarterback.apply_overrides(chosen, ratings, overrides)
+
+    assert updated.loc["BBB", "qb_name"] == "V.Et"
+    assert updated.loc["BBB", "source"] == "confirmed"
+    # The rating travels with the player, not the team.
+    assert updated.loc["BBB", "qb_form_now"] == pytest.approx(
+        ratings.loc["vet", "qb_form_now"]
+    )
+
+
+def test_teams_without_an_override_are_left_alone(tmp_path):
+    config = tmp_path / "starters.json"
+    config.write_text('{"2026": {"BBB": "V.Et"}}', encoding="utf-8")
+
+    starters = _two_team_history()
+    ratings = quarterback.player_ratings(starters, career_starts=pd.Series(dtype=float))
+    chosen = quarterback.current_starters(starters)
+    updated = quarterback.apply_overrides(
+        chosen, ratings, quarterback.load_overrides(2026, path=config)
+    )
+
+    assert updated.loc["AAA", "qb_name"] == "V.Et"
+    assert updated.loc["AAA", "source"] == "inferred"
+
+
+def test_unknown_override_name_fails_loudly(tmp_path):
+    """A typo must crash, not silently forecast with the wrong quarterback."""
+    starters = _two_team_history()
+    ratings = quarterback.player_ratings(starters, career_starts=pd.Series(dtype=float))
+
+    with pytest.raises(KeyError):
+        quarterback.apply_overrides(
+            quarterback.current_starters(starters), ratings, {"AAA": "N.Obody"}
+        )
+
+
+def test_missing_config_means_no_overrides(tmp_path):
+    assert quarterback.load_overrides(2026, path=tmp_path / "absent.json") == {}
+
+
+def test_comment_keys_are_not_treated_as_teams(tmp_path):
+    config = tmp_path / "starters.json"
+    config.write_text('{"_comment": "note", "2026": {"_note": "x", "AAA": "V.Et"}}',
+                      encoding="utf-8")
+    assert quarterback.load_overrides(2026, path=config) == {"AAA": "V.Et"}
+
+
+def test_recorded_career_starts_override_a_short_window():
+    """A veteran seen briefly must not be shrunk like a rookie."""
+    rows = [
+        {
+            "passer_player_id": "vet",
+            "team": "AAA",
+            "qb_name": "V.Et",
+            "gameday": f"2025-09-{d:02d}",
+            "qb_epa": 0.3,
+        }
+        for d in (7, 14, 21)
+    ]
+    starters = quarterback.add_qb_form(_starts(rows))
+
+    windowed = quarterback.player_ratings(starters, career_starts=pd.Series(dtype=float))
+    with_history = quarterback.player_ratings(
+        starters, career_starts=pd.Series({"vet": 150})
+    )
+
+    assert with_history.loc["vet", "career_starts"] == 150
+    # Less shrinkage toward replacement, so the rating stays closer to observed.
+    assert with_history.loc["vet", "qb_form_now"] > windowed.loc["vet", "qb_form_now"]

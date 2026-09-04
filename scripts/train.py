@@ -14,15 +14,17 @@ import sys
 from pathlib import Path
 
 import joblib
+import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from nflpred import pipeline
+from nflpred import pipeline, quarterback
 from nflpred.explain import global_importance
 from nflpred.model import fit_final
 
 MODEL_PATH = ROOT / "models" / "model.joblib"
+CAREER_PATH = ROOT / "models" / "qb_career.csv"
 REPORTS = ROOT / "reports"
 
 
@@ -35,11 +37,16 @@ def main() -> None:
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORTS.mkdir(exist_ok=True)
 
-    games, team_games, _, _ = pipeline.build(refresh=args.refresh)
+    games, team_games, _, starters = pipeline.build(refresh=args.refresh)
     pipeline.save(games, team_games)
 
     model = fit_final(games)
     joblib.dump(model, MODEL_PATH)
+
+    # Forecasting reads only recent seasons, so it cannot count career length
+    # for itself. Record it here, where the whole archive is loaded.
+    careers = quarterback.player_ratings(starters, career_starts=pd.Series(dtype=float))
+    careers[["career_starts"]].to_csv(CAREER_PATH)
 
     importance = global_importance(model)
     importance.to_csv(REPORTS / "importance.csv", index=False)

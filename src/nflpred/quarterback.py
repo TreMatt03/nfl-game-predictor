@@ -9,6 +9,9 @@ model react in the week a backup takes over.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -115,53 +118,151 @@ def add_qb_form(starters: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def current_starters(starters_with_form: pd.DataFrame) -> pd.DataFrame:
-    """Each team's established starter and their up-to-date rating.
+CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "starters.json"
 
-    Naively taking the most recent start gets this badly wrong. Teams out of
-    contention rest their starter in Week 18, so the last man to take a snap is
-    often a backup who will not see the field again -- which is how a model ends
-    up projecting Kansas City with its third-string quarterback. Taking whoever
-    started most of the team's recent games instead survives a rested week while
-    still catching a real midseason change.
+
+def load_overrides(season: int, path: Path | None = None) -> dict[str, str]:
+    """Confirmed starters for a season, or an empty map if none are recorded."""
+    path = path or CONFIG_PATH
+    if not path.exists():
+        return {}
+
+    config = json.loads(path.read_text(encoding="utf-8"))
+    return {
+        team: name
+        for team, name in config.get(str(season), {}).items()
+        if not team.startswith("_")
+    }
+
+
+CAREER_PATH = Path(__file__).resolve().parents[2] / "models" / "qb_career.csv"
+
+
+def load_career_starts(path: Path | None = None) -> pd.Series:
+    """Career start counts recorded by the last full training run.
+
+    Forecasting loads only the last few seasons of play-by-play, which is ample
+    for the EWMA but undercounts how long a passer has been starting. That
+    matters because shrinkage is driven by career length: a veteran returning
+    from injury looks like a rookie over a three-season window and gets pulled
+    toward replacement level far harder than he should be. Training sees the
+    whole archive, so it records the true counts for forecasting to reuse.
+    """
+    path = path or CAREER_PATH
+    if not path.exists():
+        return pd.Series(dtype=float)
+
+    career = pd.read_csv(path)
+    return career.set_index("passer_player_id")["career_starts"]
+
+
+def player_ratings(
+    starters_with_form: pd.DataFrame, career_starts: pd.Series | None = None
+) -> pd.DataFrame:
+    """Latest rating for every passer, keyed by player rather than team.
+
+    Ratings belong to the player, so a quarterback who changed teams in the
+    offseason brings his own history with him.
     """
     out = starters_with_form.sort_values(["passer_player_id", "gameday"]).copy()
-
-    # Unshifted this time: for a future game the most recent start is legitimate
-    # information, not leakage.
     grouped = out.groupby("passer_player_id", observed=True)
+
+    # Unshifted: for a future game the most recent start is legitimate
+    # information, not leakage.
     raw_now = grouped["qb_epa"].transform(
         lambda s: s.ewm(halflife=QB_HALFLIFE, min_periods=1).mean()
     )
-    career_starts = grouped.cumcount() + 1
-    out["qb_form_now"] = _shrink(raw_now, career_starts)
-    out["career_starts"] = career_starts
+    out["career_starts"] = grouped.cumcount() + 1
 
-    recent = (
-        out.sort_values("gameday")
-        .groupby("team", observed=True)
-        .tail(STARTER_LOOKBACK)
+    if career_starts is None:
+        career_starts = load_career_starts()
+    if not career_starts.empty:
+        # Whichever is larger: what this window saw, or what training recorded.
+        known = out["passer_player_id"].map(career_starts)
+        out["career_starts"] = np.maximum(out["career_starts"], known.fillna(0))
+
+    out["qb_form_now"] = _shrink(raw_now, out["career_starts"])
+
+    return (
+        out.groupby("passer_player_id", observed=True)
+        .tail(1)
+        .set_index("passer_player_id")[["qb_name", "qb_form_now", "career_starts"]]
     )
 
+
+def resolve_passer(name: str, ratings: pd.DataFrame) -> str:
+    """Map a display name to a unique passer id.
+
+    Fails loudly on an unknown or ambiguous name. A typo here would silently
+    swap in the wrong quarterback and quietly corrupt a whole season of
+    forecasts, which is far worse than a crash.
+    """
+    matches = ratings.index[ratings["qb_name"] == name].tolist()
+
+    if not matches:
+        raise KeyError(f"no passer named {name!r} in the play-by-play history")
+    if len(matches) > 1:
+        raise KeyError(f"{name!r} matches {len(matches)} passers: {matches}")
+    return matches[0]
+
+
+def apply_overrides(
+    chosen: pd.DataFrame, ratings: pd.DataFrame, overrides: dict[str, str]
+) -> pd.DataFrame:
+    """Replace inferred starters with confirmed ones."""
+    out = chosen.copy()
+    out["source"] = "inferred"
+
+    for team, name in overrides.items():
+        player_id = resolve_passer(name, ratings)
+        rating = ratings.loc[player_id]
+        out.loc[team, ["passer_player_id", "qb_name", "qb_form_now", "career_starts"]] = [
+            player_id,
+            rating["qb_name"],
+            rating["qb_form_now"],
+            rating["career_starts"],
+        ]
+        out.loc[team, "source"] = "confirmed"
+
+    return out
+
+
+def current_starters(
+    starters_with_form: pd.DataFrame, season: int | None = None
+) -> pd.DataFrame:
+    """Each team's expected starter and their up-to-date rating.
+
+    Inference gets two things wrong, and each is handled here.
+
+    Naively taking the most recent start picks up rested Week 18 backups, so
+    whoever started most of the team's recent games is used instead -- that
+    survives a rested week while still catching a real midseason change.
+
+    Even done well, inference can only see who started *last season*. A trade or
+    signing is invisible until the player takes a snap for his new team, which
+    in the offseason means the entire league can be stale. Passing a season
+    applies the confirmed starters recorded in config/starters.json on top.
+    """
+    out = starters_with_form.sort_values("gameday").copy()
+    ratings = player_ratings(out)
+
+    recent = out.groupby("team", observed=True).tail(STARTER_LOOKBACK)
+
     # Most starts in the window, ties broken by whoever started most recently.
-    counts = (
+    chosen = (
         recent.groupby(["team", "passer_player_id"], observed=True)
         .agg(starts=("game_id", "size"), last=("gameday", "max"))
         .reset_index()
         .sort_values(["starts", "last"], ascending=[False, False])
         .drop_duplicates("team")
+        .set_index("team")[["passer_player_id"]]
     )
 
-    latest_row = (
-        out.sort_values("gameday")
-        .groupby(["team", "passer_player_id"], observed=True)
-        .tail(1)
-    )
-    chosen = counts.merge(latest_row, on=["team", "passer_player_id"], how="left")
+    chosen = chosen.join(ratings, on="passer_player_id")
 
-    return chosen.set_index("team")[
-        ["passer_player_id", "qb_name", "qb_form_now", "career_starts"]
-    ]
+    if season is not None:
+        chosen = apply_overrides(chosen, ratings, load_overrides(season))
+    return chosen
 
 
 def attach_to_games(games: pd.DataFrame, starters: pd.DataFrame) -> pd.DataFrame:

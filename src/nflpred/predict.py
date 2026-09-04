@@ -15,7 +15,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-from . import quarterback
+from . import data, injuries, quarterback
 from .dataset import FEATURE_COLUMNS
 from .explain import top_drivers
 from .features import OFFENSE_METRICS, latest_form, regress_ratings
@@ -101,6 +101,11 @@ def build_upcoming(
             .fillna(quarterback.REPLACEMENT_LEVEL)
         )
     fixtures["qb_diff"] = fixtures["home_qb_form"] - fixtures["away_qb_form"]
+
+    # Injury reports for the coming week. Teams with nothing filed are treated
+    # as healthy, which is also what happens if the reports are not out yet.
+    reports = data.load_injuries([season])
+    fixtures = injuries.attach(fixtures, injuries.burden(reports))
 
     return fixtures
 

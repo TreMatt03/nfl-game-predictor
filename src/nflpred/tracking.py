@@ -18,6 +18,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from . import __version__
 from .model import score
 
 log = logging.getLogger(__name__)
@@ -36,6 +37,9 @@ LOG_COLUMNS = [
     "home_win_prob",
     "favorite",
     "predicted_at",
+    # Which build made the call. Without it a model change is invisible in the
+    # record, and a track record spanning two different models reads as one.
+    "model_version",
 ]
 
 
@@ -60,6 +64,7 @@ def log_predictions(slate, path: Path | None = None) -> int:
 
     frame = slate.games.copy()
     frame["predicted_at"] = pd.Timestamp.now(tz="UTC").strftime("%Y-%m-%d %H:%M")
+    frame["model_version"] = __version__
     frame["gameday"] = frame["gameday"].dt.strftime("%Y-%m-%d")
 
     for column in ("away_qb", "home_qb"):

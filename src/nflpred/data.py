@@ -27,6 +27,17 @@ PBP_URL = (
     "https://github.com/nflverse/nflverse-data/releases/download/pbp/"
     "play_by_play_{season}.parquet"
 )
+INJURY_URL = (
+    "https://github.com/nflverse/nflverse-data/releases/download/injuries/"
+    "injuries_{season}.parquet"
+)
+DRAFT_URL = (
+    "https://github.com/nflverse/nflverse-data/releases/download/draft_picks/"
+    "draft_picks.parquet"
+)
+
+# Weekly injury reports start here; earlier seasons have none published.
+FIRST_INJURY_SEASON = 2009
 
 # Repo-root/data. Gitignored; rebuilt on demand.
 CACHE_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
@@ -127,4 +138,58 @@ PBP_COLUMNS = [
     "qb_epa",
     "passer_player_id",
     "passer_player_name",
+]
+
+
+def load_draft_picks(refresh: bool = False) -> pd.DataFrame:
+    """Every draft pick since 1980, used to look up a passer's draft slot."""
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    path = CACHE_DIR / "draft_picks.parquet"
+
+    if refresh or not path.exists():
+        log.info("downloading draft picks")
+        resp = requests.get(DRAFT_URL, timeout=300)
+        resp.raise_for_status()
+        path.write_bytes(resp.content)
+
+    return pd.read_parquet(path)
+
+
+def load_injuries(seasons: list[int], refresh: bool = False) -> pd.DataFrame:
+    """Weekly injury reports, skipping seasons before reports were published."""
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    frames = []
+
+    for season in seasons:
+        if season < FIRST_INJURY_SEASON:
+            continue
+
+        path = CACHE_DIR / f"injuries_{season}.parquet"
+        if refresh or not path.exists():
+            log.info("downloading injuries for %s", season)
+            resp = requests.get(INJURY_URL.format(season=season), timeout=300)
+            if resp.status_code == 404:
+                log.warning("no injury report published for %s yet", season)
+                continue
+            resp.raise_for_status()
+            path.write_bytes(resp.content)
+
+        frames.append(pd.read_parquet(path, columns=INJURY_COLUMNS))
+
+    if not frames:
+        return pd.DataFrame(columns=INJURY_COLUMNS)
+
+    injuries = pd.concat(frames, ignore_index=True)
+    injuries["team"] = normalize_team(injuries["team"])
+    return injuries
+
+
+INJURY_COLUMNS = [
+    "season",
+    "week",
+    "team",
+    "gsis_id",
+    "position",
+    "full_name",
+    "report_status",
 ]

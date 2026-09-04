@@ -87,20 +87,75 @@ def identify_starters(qb_stats: pd.DataFrame, schedules: pd.DataFrame) -> pd.Dat
     return starters.sort_values(["passer_player_id", "gameday"]).reset_index(drop=True)
 
 
-def _shrink(form: pd.Series, starts: pd.Series) -> pd.Series:
-    """Pull a rating toward replacement level in proportion to its thinness.
+def _shrink(
+    form: pd.Series, starts: pd.Series, prior: pd.Series | float | None = None
+) -> pd.Series:
+    """Pull a rating toward a prior in proportion to its thinness.
 
     A passer with two starts and a dreadful average is far more likely to be
     unlucky than genuinely that bad. Weighting the observed form by sample size
-    against a replacement-level prior is the standard correction, and it stops
-    one Week 18 cameo from being treated as a career.
+    against a prior is the standard correction, and it stops one Week 18 cameo
+    from being treated as a career.
+
+    The prior defaults to a single replacement level for everyone. Passing a
+    per-player series instead allows a smarter prior -- draft slot, say -- which
+    is tested in scripts/experiment_roster.py.
     """
-    observed = form.fillna(REPLACEMENT_LEVEL)
+    if prior is None:
+        prior = REPLACEMENT_LEVEL
+    if isinstance(prior, pd.Series):
+        prior = prior.reindex(form.index).fillna(REPLACEMENT_LEVEL)
+
+    observed = form.fillna(prior)
     weight = starts / (starts + SHRINKAGE_STARTS)
-    return weight * observed + (1.0 - weight) * REPLACEMENT_LEVEL
+    return weight * observed + (1.0 - weight) * prior
 
 
-def add_qb_form(starters: pd.DataFrame) -> pd.DataFrame:
+def draft_priors(
+    starters: pd.DataFrame, draft: pd.DataFrame, upto_season: int
+) -> pd.Series:
+    """A shrinkage prior per passer, estimated from draft slot.
+
+    Bucket means are estimated only from seasons at or before ``upto_season``,
+    so applying the result to later seasons introduces no leakage.
+    """
+    qbs = draft[draft["position"] == "QB"][["gsis_id", "pick"]].dropna(
+        subset=["gsis_id"]
+    )
+    joined = starters.merge(
+        qbs, left_on="passer_player_id", right_on="gsis_id", how="left"
+    )
+    joined["bucket"] = joined["pick"].map(_draft_bucket)
+
+    fit = joined[
+        (joined["qb_starts"] < 16) & (joined["season"] <= upto_season)
+    ]
+    means = fit.groupby("bucket")["qb_epa"].mean()
+
+    per_player = joined.drop_duplicates("passer_player_id").set_index(
+        "passer_player_id"
+    )
+    return per_player["bucket"].map(means).fillna(REPLACEMENT_LEVEL)
+
+
+def _draft_bucket(pick: float) -> str:
+    """Coarse draft-capital tiers, wide enough to estimate stably."""
+    if pd.isna(pick):
+        return "undrafted"
+    if pick <= 10:
+        return "top-10"
+    if pick <= 32:
+        return "rest of R1"
+    if pick <= 64:
+        return "R2"
+    if pick <= 105:
+        return "R3"
+    return "R4+"
+
+
+def add_qb_form(
+    starters: pd.DataFrame, priors: pd.Series | None = None
+) -> pd.DataFrame:
     """Lagged, shrunk EWMA of each passer's EPA per dropback.
 
     Keyed on the player, not the team, so the rating follows a quarterback who
@@ -114,7 +169,12 @@ def add_qb_form(starters: pd.DataFrame) -> pd.DataFrame:
         lambda s: s.shift(1).ewm(halflife=QB_HALFLIFE, min_periods=1).mean()
     )
     out["qb_starts"] = grouped.cumcount()
-    out["qb_form"] = _shrink(raw, out["qb_starts"])
+
+    per_row = None
+    if priors is not None:
+        per_row = out["passer_player_id"].map(priors)
+
+    out["qb_form"] = _shrink(raw, out["qb_starts"], per_row)
     return out
 
 

@@ -23,6 +23,7 @@ MATCHUP_FEATURES = [f"homeoff_{m}" for m in OFFENSE_METRICS] + [
 ]
 CONTEXT_FEATURES = ["elo_diff", "rest_diff", "div_game", "neutral_site"]
 QB_FEATURES = ["qb_diff"]
+INJURY_FEATURES = ["injury_diff"]
 
 # Candidate feature sets, compared honestly in scripts/experiment.py.
 # EPA per play, passing EPA and success rate all measure close to the same
@@ -40,11 +41,12 @@ FEATURE_SETS = {
     "net": NET_FEATURES + CONTEXT_FEATURES,
     "net_qb": NET_FEATURES + CONTEXT_FEATURES + QB_FEATURES,
     "lean_qb": LEAN_FEATURES + CONTEXT_FEATURES + QB_FEATURES,
+    "lean_qb_injury": LEAN_FEATURES + CONTEXT_FEATURES + QB_FEATURES + INJURY_FEATURES,
     "matchup_qb": MATCHUP_FEATURES + CONTEXT_FEATURES + QB_FEATURES,
     "full": NET_FEATURES + MATCHUP_FEATURES + CONTEXT_FEATURES + QB_FEATURES,
 }
 
-FEATURE_COLUMNS = FEATURE_SETS["lean_qb"]
+FEATURE_COLUMNS = FEATURE_SETS["lean_qb_injury"]
 
 _METRIC_LABELS = {
     "epa_play": "EPA per play",
@@ -66,6 +68,7 @@ FEATURE_LABELS = {
     "div_game": "Divisional matchup",
     "neutral_site": "Neutral site",
     "qb_diff": "Quarterback play",
+    "injury_diff": "Injury report",
 }
 
 

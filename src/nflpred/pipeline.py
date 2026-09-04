@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from . import data, dataset, features, quarterback
+from . import data, dataset, features, injuries, quarterback
 
 log = logging.getLogger(__name__)
 
@@ -20,13 +20,18 @@ PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 
 # Play-by-play only goes back usefully to 1999, but betting lines -- needed for
 # the Vegas benchmark -- start in 2006, so that is where training begins.
-DEFAULT_START_SEASON = 2006
+# Injury reports begin in 2009 and are now a model feature, so training starts
+# there rather than 2006. Three seasons of history are worth less than a
+# feature that is populated on every row.
+DEFAULT_START_SEASON = 2009
 
 
 def build(
     start_season: int = DEFAULT_START_SEASON,
     end_season: int | None = None,
     refresh: bool = False,
+    qb_priors=None,
+    draft_prior_upto: int | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, float], pd.DataFrame]:
     """Return ``(games, team_games, elo_now, starters)`` ready for modelling.
 
@@ -54,11 +59,27 @@ def build(
 
     qb_stats = quarterback.qb_game_stats(pbp)
     starters = quarterback.identify_starters(qb_stats, schedules)
-    starters = quarterback.add_qb_form(starters)
+
+    if qb_priors is None:
+        # A passer with almost no record is shrunk toward a prior set by his
+        # draft slot rather than a flat replacement level. Estimating it needs
+        # start counts, so a provisional pass comes first.
+        provisional = quarterback.add_qb_form(starters)
+        qb_priors = quarterback.draft_priors(
+            provisional,
+            data.load_draft_picks(refresh=refresh),
+            upto_season=draft_prior_upto or end_season,
+        )
+
+    starters = quarterback.add_qb_form(starters, priors=qb_priors)
 
     elo_pre, elo_now = features.elo_ratings(schedules)
     games = dataset.build_dataset(team_games, schedules, elo_pre)
     games = quarterback.attach_to_games(games, starters)
+
+    reports = data.load_injuries(seasons, refresh=refresh)
+    games = injuries.attach(games, injuries.burden(reports))
+
     games = dataset.modelling_frame(games)
 
     log.info("built %d labelled games", len(games))

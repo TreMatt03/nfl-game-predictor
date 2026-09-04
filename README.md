@@ -23,16 +23,16 @@ seasons before it. 3,816 games, 2012–2025.
 | Model | Accuracy | Log loss | Brier | AUC |
 |---|---|---|---|---|
 | Always pick the home team | 55.6% | 0.687 | 0.247 | 0.500 |
-| Elo only | 64.2% | 0.633 | 0.222 | 0.690 |
-| Gradient boosting | 64.7% | 0.629 | 0.220 | 0.694 |
-| **This model** | **64.9%** | **0.625** | **0.218** | **0.700** |
+| Elo only | 64.1% | 0.634 | 0.222 | 0.690 |
+| Gradient boosting | 65.0% | 0.625 | 0.218 | 0.699 |
+| **This model** | **65.7%** | **0.621** | **0.216** | **0.707** |
 | Vegas closing moneyline | 66.5% | 0.609 | 0.211 | 0.720 |
 
 Log loss is the number that matters — accuracy ignores whether a 51% call and a
 90% call were equally confident. The model beats a strong Elo baseline and
-closes roughly a third of the gap between Elo and the betting market. It does
-not beat the market, and I would be suspicious of a hobby project that claimed
-to.
+closes about half the gap between Elo and the betting market, finishing within
+a point of accuracy of the closing line. It does not beat the market, and I
+would be suspicious of a hobby project that claimed to.
 
 ![Calibration](reports/calibration.png)
 
@@ -48,6 +48,13 @@ success rate, explosive-play rate — I built all of them, and every combination
 landed within noise of Elo alone (0.632 vs 0.632). Elo is computed from results,
 and results already encode efficiency. This is a negative result, but it is the
 kind worth reporting: most of the feature engineering was redundant.
+
+**Injury reports are the only input that sees the future.** Every other feature
+describes the team that *played*; the injury report describes the team about to
+play. Weighting each absence by position and by how likely the player is to sit
+was the second largest gain in the project (−0.0024 log loss). As a sanity
+check, in the 10% of games with the most lopsided injury gap, the healthier side
+won 64.1%.
 
 **Quarterback play is what Elo misses.** Elo rates a *team*, and silently
 assumes the roster that earned the rating is the roster that will play. That
@@ -130,6 +137,33 @@ As a check that the scoring path agrees with the evaluation path, replaying
 2025 as genuine out-of-sample predictions (trained through 2024 only) gives
 181–103, 63.7%, 0.634 log loss — matching that season's walk-forward row.
 
+## Draft capital, and a result that runs backwards
+
+A passer with almost no professional record used to be shrunk toward a single
+flat replacement level, which treats a first overall pick and an undrafted
+backup identically. Using draft slot as the prior instead is worth −0.0013 log
+loss overall, and −0.0051 on the 729 games where someone has under six career
+starts — which is where it can possibly matter.
+
+The priors themselves are the interesting part. Estimated on 2006–2011 only:
+
+| Draft slot | Prior EPA/dropback |
+|---|---|
+| Undrafted | **+0.024** |
+| Rest of round 1 | +0.010 |
+| Top-10 pick | −0.005 |
+| Round 4+ | −0.062 |
+| Round 2 | −0.085 |
+| Round 3 | −0.123 |
+
+Undrafted quarterbacks have the *best* early record, and top-10 picks are
+slightly below replacement. That is not a draft-capital effect, it is
+survivorship: an undrafted passer only reaches a start if he has already proven
+something, while a top-10 pick starts because of the capital sunk into him,
+ready or not. The feature helps because it captures that selection structure —
+not because being drafted early makes you good. Worth knowing before reading
+anything into a high pick.
+
 ## What does not help
 
 Things that sound like they should matter, tested and rejected. Each was judged
@@ -145,6 +179,8 @@ not on whether it correlates with winning:
 | All coaching features | 0.6257 | +0.0005 |
 | Weather (wind, cold, dome) | 0.6258 | +0.0006 |
 | Coaching + weather | 0.6264 | +0.0012 |
+
+(Measured against the pre-injury model at 0.6252.)
 
 Every one made the model worse. The coaching result is the interesting one,
 because the raw effect looks convincing:
@@ -202,8 +238,10 @@ Miami at Las Vegas by seven points of win probability.
 
 All public, no API keys, from [nflverse](https://github.com/nflverse):
 
-- `play_by_play_{season}.parquet` — every play, 2006–2025
+- `play_by_play_{season}.parquet` — every play, 2009–2025
 - `games.csv` — scores, rest days, closing betting lines, 1999–present
+- `injuries_{season}.parquet` — weekly injury reports, 2009–present
+- `draft_picks.parquet` — draft slot for every player since 1980
 
 Betting lines are used **only** as a benchmark to measure against, never as a
 model input. Feeding the market's opinion in would mostly recover the market.
@@ -219,6 +257,7 @@ python scripts/predict_week.py # next week's slate → site/
 python scripts/starters.py     # who each team is assumed to start
 python scripts/experiment.py   # feature set and regularisation sweep
 python scripts/experiment_context.py  # test coaching / weather features
+python scripts/experiment_roster.py   # test injuries / draft priors
 pytest tests/ -q
 ```
 
@@ -247,11 +286,12 @@ src/nflpred/
   model.py        classifiers and walk-forward evaluation
   explain.py      exact per-game log-odds decomposition
   predict.py      forecasting unplayed games
+  injuries.py     weekly injury burden by team
   tracking.py     prediction log and live scoring
   site.py         static page generator
 config/           confirmed starting quarterbacks, maintained by hand
 scripts/          train, backtest, experiment, predict_week, starters
-tests/            39 tests, no network required
+tests/            50 tests, no network required
 ```
 
 `.github/workflows/weekly.yml` reruns the forecast every Tuesday and deploys to
@@ -259,8 +299,9 @@ GitHub Pages.
 
 ## Limitations
 
-- **Injuries beyond quarterback are invisible.** A team missing its best pass
-  rusher looks unchanged until results move Elo.
+- **Injury weighting is coarse.** Positions carry hand-set importance weights
+  rather than snap-share, so a star receiver and a rotational one count the
+  same. Snap-weighted burden is the obvious next step.
 - **The starting quarterback is assumed, not known.** It is whoever
   `config/starters.json` names, falling back to whoever started most of the last
   10 games. A midweek injury or a late announcement will not be reflected until

@@ -35,7 +35,11 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     REPORTS.mkdir(exist_ok=True)
 
-    games, team_games, _, _ = pipeline.build(refresh=args.refresh)
+    # The draft-slot prior is estimated only from seasons before the evaluation
+    # window, so the numbers below owe nothing to hindsight.
+    games, team_games, _, _ = pipeline.build(
+        refresh=args.refresh, draft_prior_upto=FIRST_TEST_SEASON - 1
+    )
     pipeline.save(games, team_games)
 
     logistic = walk_forward(games, "logistic", FIRST_TEST_SEASON)

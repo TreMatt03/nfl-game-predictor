@@ -24,8 +24,8 @@ seasons before it. 3,816 games, 2012–2025.
 |---|---|---|---|---|
 | Always pick the home team | 55.6% | 0.687 | 0.247 | 0.500 |
 | Elo only | 64.1% | 0.634 | 0.222 | 0.690 |
-| Gradient boosting | 65.0% | 0.625 | 0.218 | 0.699 |
-| **This model** | **65.7%** | **0.621** | **0.216** | **0.707** |
+| Gradient boosting | 65.4% | 0.625 | 0.218 | 0.702 |
+| **This model** | **65.2%** | **0.622** | **0.216** | **0.706** |
 | Vegas closing moneyline | 66.5% | 0.609 | 0.211 | 0.720 |
 
 Log loss is the number that matters — accuracy ignores whether a 51% call and a
@@ -51,10 +51,21 @@ kind worth reporting: most of the feature engineering was redundant.
 
 **Injury reports are the only input that sees the future.** Every other feature
 describes the team that *played*; the injury report describes the team about to
-play. Weighting each absence by position and by how likely the player is to sit
-was the second largest gain in the project (−0.0024 log loss). As a sanity
-check, in the 10% of games with the most lopsided injury gap, the healthier side
-won 64.1%.
+play. Worth −0.0022 log loss, the second largest gain in the project. As a
+sanity check, in the 10% of games with the most lopsided injury gap the
+healthier side won 64.1%.
+
+Each absence is weighted by the player's own recent share of his unit's snaps,
+so an every-down left tackle counts for far more than a rotational one — two
+players at the same position are not the same loss. That beat hand-set position
+weights (0.6216 against 0.6221), though only slightly; the stronger argument is
+that it replaces my guesses with measurement.
+
+The trap this feature invites is subtle. A player who sat has *no* snaps in the
+week he was hurt, so weighting by current-week usage would silently turn the
+feature into a readout of who did not play — an outcome, not a forecast. Snap
+share is therefore taken strictly from earlier games, and
+`test_snap_share_excludes_the_current_week` pins it.
 
 **Quarterback play is what Elo misses.** Elo rates a *team*, and silently
 assumes the roster that earned the rating is the roster that will play. That
@@ -242,6 +253,8 @@ All public, no API keys, from [nflverse](https://github.com/nflverse):
 - `games.csv` — scores, rest days, closing betting lines, 1999–present
 - `injuries_{season}.parquet` — weekly injury reports, 2009–present
 - `draft_picks.parquet` — draft slot for every player since 1980
+- `snap_counts_{season}.parquet` — per-player snap shares, 2012–present
+- `players.parquet` — id bridge, because injuries key on gsis and snaps on pfr
 
 Betting lines are used **only** as a benchmark to measure against, never as a
 model input. Feeding the market's opinion in would mostly recover the market.
@@ -291,7 +304,7 @@ src/nflpred/
   site.py         static page generator
 config/           confirmed starting quarterbacks, maintained by hand
 scripts/          train, backtest, experiment, predict_week, starters
-tests/            50 tests, no network required
+tests/            56 tests, no network required
 ```
 
 `.github/workflows/weekly.yml` reruns the forecast every Tuesday and deploys to
@@ -299,9 +312,10 @@ GitHub Pages.
 
 ## Limitations
 
-- **Injury weighting is coarse.** Positions carry hand-set importance weights
-  rather than snap-share, so a star receiver and a rotational one count the
-  same. Snap-weighted burden is the obvious next step.
+- **Injury severity is invisible.** A player listed Out is weighted the same
+  whether he misses one week or the season, and teams under-report by design.
+- **Snap counts only exist from 2012**, so 2009–2011 injuries fall back to
+  average usage for the position.
 - **The starting quarterback is assumed, not known.** It is whoever
   `config/starters.json` names, falling back to whoever started most of the last
   10 games. A midweek injury or a late announcement will not be reflected until

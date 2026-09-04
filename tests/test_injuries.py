@@ -7,9 +7,11 @@ from nflpred import injuries
 
 
 def _reports(rows):
-    return pd.DataFrame(
+    frame = pd.DataFrame(
         rows, columns=["season", "week", "team", "position", "report_status"]
     )
+    frame["gsis_id"] = [f"p{i}" for i in range(len(frame))]
+    return frame
 
 
 def test_out_players_count_more_than_questionable_ones():
@@ -54,7 +56,7 @@ def test_unknown_position_gets_the_default_weight():
     reports = _reports([(2025, 1, "AAA", "ATHLETE", "Out")])
     burden = injuries.burden(reports)
     assert burden.iloc[0]["weighted_out"] == pytest.approx(
-        injuries.DEFAULT_POSITION_WEIGHT
+        injuries.DEFAULT_SHARE
     )
 
 
@@ -116,3 +118,90 @@ def test_reports_from_another_week_do_not_leak_in():
     attached = injuries.attach(_games(), injuries.burden(reports))
 
     assert attached.iloc[0]["injury_diff"] == pytest.approx(0.0)
+
+
+def _snaps(rows):
+    """Snap-count rows: (season, week, pfr_id, offense_pct, defense_pct)."""
+    return pd.DataFrame(
+        rows,
+        columns=["season", "week", "pfr_player_id", "offense_pct", "defense_pct"],
+    )
+
+
+def _bridge(pairs):
+    return pd.DataFrame(pairs, columns=["gsis_id", "pfr_id"])
+
+
+def test_snap_share_excludes_the_current_week():
+    """A player who sat has no snaps that week; using them would be circular."""
+    snaps = _snaps(
+        [
+            (2025, 1, "aa", 1.0, 0.0),
+            (2025, 2, "aa", 1.0, 0.0),
+            (2025, 3, "aa", 0.0, 0.0),
+        ]
+    )
+    shares = injuries.snap_shares(snaps).set_index("order")
+
+    # Entering week 3 he was a full-time player, despite playing no snaps in it.
+    assert shares.loc[202503, "share_before"] == pytest.approx(1.0)
+
+
+def test_snap_share_has_no_value_before_a_players_first_game():
+    snaps = _snaps([(2025, 1, "aa", 1.0, 0.0)])
+    assert injuries.snap_shares(snaps).empty
+
+
+def test_a_starter_outweighs_a_rotational_player_at_the_same_position():
+    """The whole point of snap share over position weights."""
+    snaps = _snaps(
+        [
+            (2025, 1, "starter", 1.0, 0.0),
+            (2025, 2, "starter", 1.0, 0.0),
+            (2025, 1, "backup", 0.1, 0.0),
+            (2025, 2, "backup", 0.1, 0.0),
+        ]
+    )
+    shares = injuries.snap_shares(snaps)
+    bridge = _bridge([("p0", "starter"), ("p1", "backup")])
+
+    reports = _reports(
+        [(2025, 2, "AAA", "WR", "Out"), (2025, 2, "BBB", "WR", "Out")]
+    )
+    burden = injuries.burden(reports, shares, bridge).set_index("team")
+
+    assert burden.loc["AAA", "weighted_out"] > burden.loc["BBB", "weighted_out"]
+
+
+def test_players_without_snap_history_fall_back_to_position():
+    snaps = _snaps([(2025, 1, "other", 1.0, 0.0), (2025, 2, "other", 1.0, 0.0)])
+    shares = injuries.snap_shares(snaps)
+
+    reports = _reports([(2025, 2, "AAA", "QB", "Out")])
+    burden = injuries.burden(reports, shares, _bridge([("zz", "zz")]))
+
+    assert burden.iloc[0]["weighted_out"] == pytest.approx(
+        injuries.POSITION_SHARE["QB"]
+    )
+
+
+def test_share_carries_over_from_the_most_recent_prior_week():
+    """A player hurt in week 5 is weighted by his week 1-4 usage."""
+    snaps = _snaps(
+        [(2025, w, "aa", 1.0, 0.0) for w in (1, 2, 3, 4)]
+    )
+    shares = injuries.snap_shares(snaps)
+    reports = _reports([(2025, 8, "AAA", "WR", "Out")])
+
+    burden = injuries.burden(reports, shares, _bridge([("p0", "aa")]))
+    assert burden.iloc[0]["weighted_out"] == pytest.approx(1.0)
+
+
+def test_snap_share_falls_back_when_no_snap_data_exists():
+    """Seasons before 2012 have no snap counts and must still work."""
+    reports = _reports([(2010, 1, "AAA", "QB", "Out")])
+    burden = injuries.burden(reports, injuries.snap_shares(_snaps([])), None)
+
+    assert burden.iloc[0]["weighted_out"] == pytest.approx(
+        injuries.POSITION_SHARE["QB"]
+    )

@@ -31,6 +31,14 @@ INJURY_URL = (
     "https://github.com/nflverse/nflverse-data/releases/download/injuries/"
     "injuries_{season}.parquet"
 )
+SNAP_URL = (
+    "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/"
+    "snap_counts_{season}.parquet"
+)
+PLAYERS_URL = (
+    "https://github.com/nflverse/nflverse-data/releases/download/players/"
+    "players.parquet"
+)
 DRAFT_URL = (
     "https://github.com/nflverse/nflverse-data/releases/download/draft_picks/"
     "draft_picks.parquet"
@@ -38,6 +46,9 @@ DRAFT_URL = (
 
 # Weekly injury reports start here; earlier seasons have none published.
 FIRST_INJURY_SEASON = 2009
+
+# Snap counts are scraped from Pro Football Reference and begin in 2012.
+FIRST_SNAP_SEASON = 2012
 
 # Repo-root/data. Gitignored; rebuilt on demand.
 CACHE_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
@@ -192,4 +203,60 @@ INJURY_COLUMNS = [
     "position",
     "full_name",
     "report_status",
+]
+
+
+def load_players(refresh: bool = False) -> pd.DataFrame:
+    """The player table, used only to bridge gsis ids to Pro Football Reference.
+
+    Injury reports key on gsis_id and snap counts key on pfr_player_id, so
+    joining the two needs this in between.
+    """
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    path = CACHE_DIR / "players.parquet"
+
+    if refresh or not path.exists():
+        log.info("downloading player id bridge")
+        resp = requests.get(PLAYERS_URL, timeout=300)
+        resp.raise_for_status()
+        path.write_bytes(resp.content)
+
+    players = pd.read_parquet(path, columns=["gsis_id", "pfr_id"])
+    return players.dropna(subset=["gsis_id", "pfr_id"]).drop_duplicates("gsis_id")
+
+
+def load_snap_counts(seasons: list[int], refresh: bool = False) -> pd.DataFrame:
+    """Per-player snap shares, skipping seasons before they were recorded."""
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    frames = []
+
+    for season in seasons:
+        if season < FIRST_SNAP_SEASON:
+            continue
+
+        path = CACHE_DIR / f"snap_counts_{season}.parquet"
+        if refresh or not path.exists():
+            log.info("downloading snap counts for %s", season)
+            resp = requests.get(SNAP_URL.format(season=season), timeout=300)
+            if resp.status_code == 404:
+                log.warning("no snap counts published for %s yet", season)
+                continue
+            resp.raise_for_status()
+            path.write_bytes(resp.content)
+
+        frames.append(pd.read_parquet(path, columns=SNAP_COLUMNS))
+
+    if not frames:
+        return pd.DataFrame(columns=SNAP_COLUMNS)
+    return pd.concat(frames, ignore_index=True)
+
+
+SNAP_COLUMNS = [
+    "season",
+    "week",
+    "pfr_player_id",
+    "position",
+    "team",
+    "offense_pct",
+    "defense_pct",
 ]

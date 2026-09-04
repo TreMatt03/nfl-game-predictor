@@ -105,7 +105,10 @@ def build_upcoming(
     # Injury reports for the coming week. Teams with nothing filed are treated
     # as healthy, which is also what happens if the reports are not out yet.
     reports = data.load_injuries([season])
-    fixtures = injuries.attach(fixtures, injuries.burden(reports))
+    snaps = injuries.snap_shares(data.load_snap_counts([season - 1, season]))
+    fixtures = injuries.attach(
+        fixtures, injuries.burden(reports, snaps, data.load_players())
+    )
 
     return fixtures
 

@@ -78,7 +78,9 @@ def build(
     games = quarterback.attach_to_games(games, starters)
 
     reports = data.load_injuries(seasons, refresh=refresh)
-    games = injuries.attach(games, injuries.burden(reports))
+    snaps = injuries.snap_shares(data.load_snap_counts(seasons, refresh=refresh))
+    bridge = data.load_players(refresh=refresh)
+    games = injuries.attach(games, injuries.burden(reports, snaps, bridge))
 
     games = dataset.modelling_frame(games)
 
